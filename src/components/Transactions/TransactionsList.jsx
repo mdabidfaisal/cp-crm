@@ -44,7 +44,7 @@ export default function TransactionsList() {
                   {t.type}
                 </span>
               </td>
-              <td className="p-3 text-right font-medium">${t.amount.toLocaleString()}</td>
+              <td className="p-3 text-right font-medium">৳{t.amount.toLocaleString()}</td>
               <td className="p-3 text-gray-500">{t.note || '-'}</td>
             </tr>
           ))}

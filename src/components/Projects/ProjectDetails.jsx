@@ -15,16 +15,16 @@ export default function ProjectDetails({ projectId }) {
       <div className="grid grid-cols-3 gap-4">
         <div className="card">
           <p className="text-sm text-gray-500">Budget</p>
-          <p className="text-xl font-bold">${(project.budget || 0).toLocaleString()}</p>
+          <p className="text-xl font-bold">৳{(project.budget || 0).toLocaleString()}</p>
         </div>
         <div className="card">
           <p className="text-sm text-gray-500">Paid</p>
-          <p className="text-xl font-bold text-green-600">${totalPaid.toLocaleString()}</p>
+          <p className="text-xl font-bold text-green-600">৳{totalPaid.toLocaleString()}</p>
         </div>
         <div className="card">
           <p className="text-sm text-gray-500">Balance</p>
           <p className={`text-xl font-bold ${(project.budget || 0) - totalPaid > 0 ? 'text-red-600' : 'text-gray-600'}`}>
-            ${((project.budget || 0) - totalPaid).toLocaleString()}
+            ৳{((project.budget || 0) - totalPaid).toLocaleString()}
           </p>
         </div>
       </div>

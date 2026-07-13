@@ -2,8 +2,8 @@ export default function QuickStats({ stats }) {
   const cards = [
     { label: 'Active Projects', value: stats.activeProjects, color: 'text-blue-600' },
     { label: 'Total Clients', value: stats.totalClients, color: 'text-purple-600' },
-    { label: 'Income (MTD)', value: `$${stats.monthlyIncome.toLocaleString()}`, color: 'text-green-600' },
-    { label: 'Net (MTD)', value: `$${stats.monthlyNet.toLocaleString()}`, color: stats.monthlyNet >= 0 ? 'text-green-600' : 'text-red-600' },
+    { label: 'Income (MTD)', value: `৳${stats.monthlyIncome.toLocaleString()}`, color: 'text-green-600' },
+    { label: 'Net (MTD)', value: `৳${stats.monthlyNet.toLocaleString()}`, color: stats.monthlyNet >= 0 ? 'text-green-600' : 'text-red-600' },
   ];
 
   return (

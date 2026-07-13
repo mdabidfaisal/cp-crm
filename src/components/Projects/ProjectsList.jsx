@@ -31,8 +31,8 @@ export default function ProjectsList() {
             </div>
             <p className="text-sm text-gray-500 mb-3">{p.type}</p>
             <div className="flex justify-between text-sm">
-              <span>Budget: <strong>${(p.budget || 0).toLocaleString()}</strong></span>
-              <span>Paid: <strong>${totalPaid.toLocaleString()}</strong></span>
+              <span>Budget: <strong>৳{(p.budget || 0).toLocaleString()}</strong></span>
+              <span>Paid: <strong>৳{totalPaid.toLocaleString()}</strong></span>
             </div>
             {p.deadline && (
               <p className="text-xs text-gray-400 mt-2">Deadline: {new Date(p.deadline).toLocaleDateString()}</p>

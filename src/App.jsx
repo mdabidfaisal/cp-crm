@@ -14,7 +14,7 @@ import SettingsPage from './pages/SettingsPage';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 function AppContent() {
-  const [initialized, setInitialized] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { isSignedIn, setUser } = useAuthStore();
   const { loadProjects, loadClients, loadTransactions } = useProjectStore();
 
@@ -25,41 +25,36 @@ function AppContent() {
       const name = localStorage.getItem('user_name');
 
       if (token && email) {
-        setUser({ email, name: name || email });
-
+        googleDrive.accessToken = token;
         try {
           await googleDrive.initializeFolderStructure();
+          setUser({ email, name: name || email });
           await loadProjects();
           await loadClients();
           await loadTransactions();
-          setInitialized(true);
         } catch (error) {
           console.error('Initialization error:', error);
+          localStorage.removeItem('google_access_token');
+          localStorage.removeItem('user_email');
+          localStorage.removeItem('user_name');
         }
       }
+      setLoading(false);
     };
     initApp();
   }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen"><p className="text-xl text-gray-600">Loading...</p></div>;
+  }
 
   if (!isSignedIn) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-4">Code Prophet CRM</h1>
-          <p className="text-gray-600 mb-8">
-            Manage projects, clients, and finances in one place
-          </p>
+          <p className="text-gray-600 mb-8">Manage projects, clients, and finances in one place</p>
           <GoogleLoginButton />
-        </div>
-      </div>
-    );
-  }
-
-  if (!initialized) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-xl text-gray-600">Loading your data...</p>
         </div>
       </div>
     );

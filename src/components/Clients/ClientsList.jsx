@@ -36,8 +36,8 @@ export default function ClientsList() {
                 <td className="p-3 text-gray-500">{c.email || '-'}</td>
                 <td className="p-3 text-gray-500">{c.phone || '-'}</td>
                 <td className="p-3 text-center">{clientProjects.length}</td>
-                <td className="p-3 text-right text-green-600 font-medium">${totalPaid.toLocaleString()}</td>
-                <td className="p-3 text-right font-medium">${(totalBudget - totalPaid).toLocaleString()}</td>
+                <td className="p-3 text-right text-green-600 font-medium">৳{totalPaid.toLocaleString()}</td>
+                <td className="p-3 text-right font-medium">৳{(totalBudget - totalPaid).toLocaleString()}</td>
               </tr>
             );
           })}

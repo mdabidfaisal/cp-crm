@@ -25,10 +25,10 @@ export default function MonthlyOverview() {
           <div key={m.month} className="flex justify-between items-center text-sm p-2 rounded hover:bg-gray-50">
             <span className="font-medium">{m.month}</span>
             <div className="flex gap-4">
-              <span className="text-green-600">+${m.income.toLocaleString()}</span>
-              <span className="text-red-600">-${m.expense.toLocaleString()}</span>
+              <span className="text-green-600">+৳{m.income.toLocaleString()}</span>
+              <span className="text-red-600">-৳{m.expense.toLocaleString()}</span>
               <span className={m.income - m.expense >= 0 ? 'text-gray-900' : 'text-red-600'}>
-                ${(m.income - m.expense).toLocaleString()}
+                ৳{(m.income - m.expense).toLocaleString()}
               </span>
             </div>
           </div>

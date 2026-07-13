@@ -1,56 +1,53 @@
-import { useEffect, useState, useRef } from 'react';
-import googleDrive from '../services/googleDrive';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+
 export default function GoogleLoginButton() {
-  const [isInitialized, setIsInitialized] = useState(false);
-  const { setUser, user } = useAuthStore();
-  const tokenClientRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const [ready, setReady] = useState(false);
+  const { user, setUser } = useAuthStore();
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        await googleDrive.initTokenClient();
-        setIsInitialized(true);
-        const token = localStorage.getItem('google_access_token');
-        const email = localStorage.getItem('user_email');
-        const name = localStorage.getItem('user_name');
-        if (token && email) {
-          setUser({ email, name: name || email });
-        }
-      } catch (error) {
-        console.error('Google initialization error:', error);
+    const check = () => {
+      if (window.google?.accounts?.oauth2) {
+        setReady(true);
+      } else {
+        setTimeout(check, 200);
       }
     };
-    init();
+    check();
   }, []);
 
   const handleLogin = () => {
     if (!window.google?.accounts?.oauth2) return;
-
-    const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/drive.file',
-      callback: (response) => {
+    setBusy(true);
+    window.google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPE,
+      callback: async (response) => {
         if (response.access_token) {
           localStorage.setItem('google_access_token', response.access_token);
-          googleDrive.accessToken = response.access_token;
-
-          const payload = JSON.parse(atob(response.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-          const email = payload.email || localStorage.getItem('user_email') || '';
-          const name = payload.name || email;
-          localStorage.setItem('user_email', email);
-          localStorage.setItem('user_name', name);
-          setUser({ email, name });
+          try {
+            const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+              headers: { Authorization: `Bearer ${response.access_token}` }
+            });
+            const userInfo = await res.json();
+            localStorage.setItem('user_email', userInfo.email || '');
+            localStorage.setItem('user_name', userInfo.name || userInfo.email || '');
+          } catch (_) {}
+          window.location.reload();
+        } else {
+          setBusy(false);
         }
       },
-    });
-
-    client.requestAccessToken();
+      error_callback: () => setBusy(false),
+    }).requestAccessToken();
   };
 
   const handleLogout = () => {
-    googleDrive.logout();
+    localStorage.clear();
     setUser(null);
   };
 
@@ -58,20 +55,14 @@ export default function GoogleLoginButton() {
     return (
       <div className="flex items-center gap-4">
         <span className="text-sm text-gray-600">{user.email}</span>
-        <button onClick={handleLogout} className="btn btn-danger text-sm">
-          Logout
-        </button>
+        <button onClick={handleLogout} className="btn btn-danger text-sm">Logout</button>
       </div>
     );
   }
 
   return (
-    <button
-      onClick={handleLogin}
-      disabled={!isInitialized}
-      className="btn-primary disabled:bg-gray-400"
-    >
-      {isInitialized ? 'Sign in with Google' : 'Initializing...'}
+    <button onClick={handleLogin} disabled={!ready || busy} className="btn-primary disabled:bg-gray-400">
+      {!ready ? 'Loading...' : busy ? 'Signing in...' : 'Sign in with Google'}
     </button>
   );
 }

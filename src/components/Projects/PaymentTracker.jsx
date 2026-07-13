@@ -33,8 +33,8 @@ export default function PaymentTracker({ projectId }) {
       </form>
 
       <div className="flex gap-4 mb-3 text-sm">
-        <span>Total paid: <strong>${totalPaid.toLocaleString()}</strong></span>
-        <span>Budget: <strong>${(project.budget || 0).toLocaleString()}</strong></span>
+        <span>Total paid: <strong>৳{totalPaid.toLocaleString()}</strong></span>
+        <span>Budget: <strong>৳{(project.budget || 0).toLocaleString()}</strong></span>
       </div>
 
       {payments.length === 0 ? (
@@ -53,7 +53,7 @@ export default function PaymentTracker({ projectId }) {
               <tr key={p.id} className="border-b last:border-0">
                 <td className="py-2">{new Date(p.date).toLocaleDateString()}</td>
                 <td className="py-2 text-gray-500">{p.note || '-'}</td>
-                <td className="py-2 text-right font-medium">${p.amount.toLocaleString()}</td>
+                <td className="py-2 text-right font-medium">৳{p.amount.toLocaleString()}</td>
               </tr>
             ))}
           </tbody>

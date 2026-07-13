@@ -1,5 +1,9 @@
 export function formatCurrency(amount) {
-  return `$${(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `৳${(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+export function formatBdt(amount) {
+  return `৳${(amount || 0).toLocaleString()}`
 }
 
 export function formatDate(dateStr) {

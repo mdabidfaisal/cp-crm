@@ -1,9 +1,6 @@
 import axios from 'axios';
 
 const DRIVE_API_URL = 'https://www.googleapis.com/drive/v3';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-
-let tokenClient = null;
 
 class GoogleDriveService {
   constructor() {
@@ -14,75 +11,17 @@ class GoogleDriveService {
     };
   }
 
-  async initTokenClient() {
-    if (tokenClient) return;
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.onload = () => {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          scope: SCOPES,
-          callback: (response) => {
-            if (response.access_token) {
-              this.accessToken = response.access_token;
-              localStorage.setItem('google_access_token', response.access_token);
-
-              const userData = this.decodeToken(response.access_token);
-              localStorage.setItem('user_email', userData.email || '');
-              localStorage.setItem('user_name', userData.name || userData.email || '');
-            }
-          },
-        });
-        resolve();
-      };
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
-  }
-
-  decodeToken(token) {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      return JSON.parse(jsonPayload);
-    } catch {
-      return {};
-    }
-  }
-
-  requestAccessToken() {
-    return new Promise((resolve, reject) => {
-      if (!tokenClient) {
-        reject(new Error('Token client not initialized'));
-        return;
-      }
-      tokenClient.callback = (response) => {
-        if (response.access_token) {
-          this.accessToken = response.access_token;
-          localStorage.setItem('google_access_token', response.access_token);
-
-          const userData = this.decodeToken(response.access_token);
-          localStorage.setItem('user_email', userData.email || '');
-          localStorage.setItem('user_name', userData.name || userData.email || '');
-          resolve(userData);
-        } else if (response.error) {
-          reject(response);
-        }
-      };
-      tokenClient.requestAccessToken();
-    });
-  }
-
   async initializeFolderStructure() {
     try {
       let mainFolderId = this.folderStructure.mainFolderId;
+
+      if (mainFolderId) {
+        const exists = await this.verifyFolder(mainFolderId);
+        if (!exists) {
+          localStorage.removeItem('crm_main_folder_id');
+          mainFolderId = null;
+        }
+      }
 
       if (!mainFolderId) {
         mainFolderId = await this.createFolder(
@@ -90,30 +29,45 @@ class GoogleDriveService {
           'root'
         );
         localStorage.setItem('crm_main_folder_id', mainFolderId);
+        this.folderStructure.mainFolderId = mainFolderId;
       }
 
-      const projectsFolderId = await this.createFolder('Projects', mainFolderId);
-      const clientsFolderId = await this.createFolder('Clients', mainFolderId);
-      const transactionsFolderId = await this.createFolder('Transactions', mainFolderId);
-      const templatesFolderId = await this.createFolder('Templates', mainFolderId);
+      const subFolders = ['Projects', 'Clients', 'Transactions', 'Templates'];
+      for (const name of subFolders) {
+        const key = `crm_${name.toLowerCase()}_folder_id`;
+        let folderId = localStorage.getItem(key);
 
-      localStorage.setItem('crm_projects_folder_id', projectsFolderId);
-      localStorage.setItem('crm_clients_folder_id', clientsFolderId);
-      localStorage.setItem('crm_transactions_folder_id', transactionsFolderId);
-      localStorage.setItem('crm_templates_folder_id', templatesFolderId);
+        if (folderId) {
+          const exists = await this.verifyFolder(folderId);
+          if (!exists) {
+            localStorage.removeItem(key);
+            folderId = null;
+          }
+        }
 
-      this.folderStructure = {
-        mainFolderId,
-        projectsFolderId,
-        clientsFolderId,
-        transactionsFolderId,
-        templatesFolderId,
-      };
+        if (!folderId) {
+          folderId = await this.createFolder(name, mainFolderId);
+          localStorage.setItem(key, folderId);
+        }
+        this.folderStructure[`${name.toLowerCase()}FolderId`] = folderId;
+      }
 
       return this.folderStructure;
     } catch (error) {
-      console.error('Error initializing folder structure:', error);
+      const errMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+      console.error('Error initializing folder structure:', errMsg);
       throw error;
+    }
+  }
+
+  async verifyFolder(folderId) {
+    try {
+      await axios.get(`${DRIVE_API_URL}/files/${folderId}?fields=id,mimeType`, {
+        headers: { Authorization: `Bearer ${this.accessToken}` },
+      });
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -133,6 +87,10 @@ class GoogleDriveService {
   }
 
   async saveFile(filename, data, parentFolderId) {
+    if (!parentFolderId) {
+      console.error(`saveFile: parentFolderId is missing for ${filename}`);
+      throw new Error(`Folder not ready for ${filename}`);
+    }
     const jsonContent = JSON.stringify(data, null, 2);
     const existingFile = await this.findFile(filename, parentFolderId);
 
@@ -150,17 +108,22 @@ class GoogleDriveService {
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
     form.append('file', new Blob([jsonContent], { type: 'application/json' }));
 
-    const response = await axios.post(
-      `${DRIVE_API_URL}/files?uploadType=multipart&fields=id`,
-      form,
-      {
-        headers: {
-          Authorization: `Bearer ${this.accessToken}`,
-          'Content-Type': 'multipart/related',
-        },
-      }
-    );
-    return response.data.id;
+    try {
+      const response = await axios.post(
+        `${DRIVE_API_URL}/files?uploadType=multipart&fields=id`,
+        form,
+        {
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+            'Content-Type': 'multipart/related',
+          },
+        }
+      );
+      return response.data.id;
+    } catch (error) {
+      console.error(`saveFile error for ${filename}:`, error.response?.data || error.message);
+      throw error;
+    }
   }
 
   async updateFile(fileId, content) {
@@ -185,25 +148,44 @@ class GoogleDriveService {
   }
 
   async findFile(filename, folderId) {
-    const query = `name='${filename}' and '${folderId}' in parents and trashed=false`;
-    const response = await axios.get(
-      `${DRIVE_API_URL}/files?q=${encodeURIComponent(query)}&fields=id,name,modifiedTime&pageSize=1`,
-      {
-        headers: { Authorization: `Bearer ${this.accessToken}` },
-      }
-    );
-    return response.data.files.length > 0 ? response.data.files[0] : null;
+    if (!folderId) {
+      console.error(`findFile: folderId is missing for ${filename}`);
+      return null;
+    }
+    const folderIdClean = String(folderId).trim();
+    const query = `name='${filename}' and '${folderIdClean}' in parents and trashed=false`;
+    try {
+      const response = await axios.get(
+        `${DRIVE_API_URL}/files?q=${encodeURIComponent(query)}&fields=id,name,modifiedTime&pageSize=1`,
+        {
+          headers: { Authorization: `Bearer ${this.accessToken}` },
+        }
+      );
+      return response.data.files.length > 0 ? response.data.files[0] : null;
+    } catch (error) {
+      const errMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+      console.error(`findFile error for ${filename}:`, errMsg);
+      return null;
+    }
   }
 
   async listFiles(folderId) {
-    const query = `'${folderId}' in parents and trashed=false`;
-    const response = await axios.get(
-      `${DRIVE_API_URL}/files?q=${encodeURIComponent(query)}&fields=id,name,mimeType,modifiedTime&pageSize=100`,
-      {
-        headers: { Authorization: `Bearer ${this.accessToken}` },
-      }
-    );
-    return response.data.files || [];
+    if (!folderId) return [];
+    const folderIdClean = String(folderId).trim();
+    const query = `'${folderIdClean}' in parents and trashed=false`;
+    try {
+      const response = await axios.get(
+        `${DRIVE_API_URL}/files?q=${encodeURIComponent(query)}&fields=id,name,mimeType,modifiedTime&pageSize=100`,
+        {
+          headers: { Authorization: `Bearer ${this.accessToken}` },
+        }
+      );
+      return response.data.files || [];
+    } catch (error) {
+      const errMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+      console.error(`listFiles error for folder ${folderId}:`, errMsg);
+      return [];
+    }
   }
 
   async deleteFile(fileId) {

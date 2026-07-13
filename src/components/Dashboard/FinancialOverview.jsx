@@ -17,7 +17,7 @@ export default function FinancialOverview({ transactions = [] }) {
             <li key={t.id} className="flex justify-between text-sm p-2">
               <span>{t.category}</span>
               <span className={t.type === 'income' ? 'text-green-600' : 'text-red-600'}>
-                {t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}
+                {t.type === 'income' ? '+' : '-'}৳{t.amount.toLocaleString()}
               </span>
             </li>
           ))}

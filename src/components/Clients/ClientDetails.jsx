@@ -27,11 +27,11 @@ export default function ClientDetails({ clientId }) {
         </div>
         <div className="card">
           <p className="text-sm text-gray-500">Total Paid</p>
-          <p className="text-xl font-bold text-green-600">${totalPaid.toLocaleString()}</p>
+          <p className="text-xl font-bold text-green-600">৳{totalPaid.toLocaleString()}</p>
         </div>
         <div className="card">
           <p className="text-sm text-gray-500">Outstanding</p>
-          <p className="text-xl font-bold text-red-600">${(totalBudget - totalPaid).toLocaleString()}</p>
+          <p className="text-xl font-bold text-red-600">৳{(totalBudget - totalPaid).toLocaleString()}</p>
         </div>
       </div>
 

@@ -2,7 +2,7 @@ export default function ClientStats({ totalClients, activeProjects, totalRevenue
   const cards = [
     { label: 'Total Clients', value: totalClients, color: 'text-purple-600' },
     { label: 'Active Projects', value: activeProjects, color: 'text-blue-600' },
-    { label: 'Total Revenue', value: `$${(totalRevenue || 0).toLocaleString()}`, color: 'text-green-600' },
+    { label: 'Total Revenue', value: `৳${(totalRevenue || 0).toLocaleString()}`, color: 'text-green-600' },
   ];
 
   return (
