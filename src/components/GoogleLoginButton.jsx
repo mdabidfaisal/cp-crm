@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import googleDrive from '../services/googleDrive';
 import { useAuthStore } from '../store/authStore';
 
 export default function GoogleLoginButton() {
   const [isInitialized, setIsInitialized] = useState(false);
   const { setUser, user } = useAuthStore();
+  const tokenClientRef = useRef(null);
 
   useEffect(() => {
     const init = async () => {
@@ -24,17 +25,28 @@ export default function GoogleLoginButton() {
     init();
   }, []);
 
-  const handleLogin = async () => {
-    try {
-      if (!isInitialized) {
-        await googleDrive.initTokenClient();
-        setIsInitialized(true);
-      }
-      const userData = await googleDrive.requestAccessToken();
-      setUser({ email: userData.email, name: userData.name || userData.email });
-    } catch (error) {
-      console.error('Login error:', error);
-    }
+  const handleLogin = () => {
+    if (!window.google?.accounts?.oauth2) return;
+
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/drive.file',
+      callback: (response) => {
+        if (response.access_token) {
+          localStorage.setItem('google_access_token', response.access_token);
+          googleDrive.accessToken = response.access_token;
+
+          const payload = JSON.parse(atob(response.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+          const email = payload.email || localStorage.getItem('user_email') || '';
+          const name = payload.name || email;
+          localStorage.setItem('user_email', email);
+          localStorage.setItem('user_name', name);
+          setUser({ email, name });
+        }
+      },
+    });
+
+    client.requestAccessToken();
   };
 
   const handleLogout = () => {
