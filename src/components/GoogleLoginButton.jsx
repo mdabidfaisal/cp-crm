@@ -47,7 +47,9 @@ export default function GoogleLoginButton() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    localStorage.removeItem('google_access_token');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('user_name');
     setUser(null);
   };
 

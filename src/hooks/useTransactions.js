@@ -4,7 +4,8 @@ export function useTransactions() {
   const transactions = useTransactionStore((s) => s.transactions);
   const isLoading = useTransactionStore((s) => s.isLoading);
   const addTransaction = useTransactionStore((s) => s.addTransaction);
+  const updateTransaction = useTransactionStore((s) => s.updateTransaction);
   const deleteTransaction = useTransactionStore((s) => s.deleteTransaction);
 
-  return { transactions, isLoading, addTransaction, deleteTransaction };
+  return { transactions, isLoading, addTransaction, updateTransaction, deleteTransaction };
 }

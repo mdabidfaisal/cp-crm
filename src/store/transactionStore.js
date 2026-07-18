@@ -34,6 +34,20 @@ export const useTransactionStore = create((set, get) => ({
       const transFolder = localStorage.getItem('crm_transactions_folder_id')
       await googleDrive.saveFile('transactions.json', updated, transFolder)
       set({ transactions: updated.transactions })
+      return newTxn.id
+    } catch (error) {
+      set({ error: error.message })
+      throw error
+    }
+  },
+
+  updateTransaction: async (id, data) => {
+    try {
+      const { transactions } = get()
+      const updated = { transactions: transactions.map((t) => (t.id === id ? { ...t, ...data } : t)) }
+      const transFolder = localStorage.getItem('crm_transactions_folder_id')
+      await googleDrive.saveFile('transactions.json', updated, transFolder)
+      set({ transactions: updated.transactions })
     } catch (error) {
       set({ error: error.message })
       throw error

@@ -6,12 +6,20 @@ const PROJECT_TYPES = ['Web Dev', 'Mobile', 'Design', 'Marketing', 'Consulting',
 const PAYMENT_MODES = ['Full', 'Installments', 'Retainer'];
 const STATUSES = ['Planning', 'Active', 'On Hold', 'Completed', 'Closed'];
 
-export default function ProjectForm({ onClose }) {
-  const { saveProject } = useProjects();
+export default function ProjectForm({ onClose, project: initialProject }) {
+  const { saveProject, updateProject } = useProjects();
   const { clients } = useClients();
+  const isEdit = !!initialProject;
   const [form, setForm] = useState({
-    name: '', clientId: '', type: '', brief: '', budget: '',
-    paymentMode: 'Full', deadline: '', status: 'Planning', team: '',
+    name: initialProject?.name || '',
+    clientId: initialProject?.clientId || '',
+    type: initialProject?.type || '',
+    brief: initialProject?.brief || '',
+    budget: initialProject?.budget || '',
+    paymentMode: initialProject?.paymentMode || 'Full',
+    deadline: initialProject?.deadline || '',
+    status: initialProject?.status || 'Planning',
+    team: initialProject?.team ? initialProject.team.join(', ') : '',
   });
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -19,14 +27,21 @@ export default function ProjectForm({ onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await saveProject({
-        id: crypto.randomUUID(),
+      const data = {
         ...form,
         budget: parseFloat(form.budget) || 0,
         team: form.team.split(',').map((t) => t.trim()).filter(Boolean),
-        payments: [],
-        createdAt: new Date().toISOString(),
-      });
+      };
+      if (isEdit) {
+        await updateProject(initialProject.id, data);
+      } else {
+        await saveProject({
+          id: crypto.randomUUID(),
+          ...data,
+          payments: [],
+          createdAt: new Date().toISOString(),
+        });
+      }
       onClose();
     } catch (error) {
       console.error('Error saving project:', error);
@@ -94,7 +109,7 @@ export default function ProjectForm({ onClose }) {
 
       <div className="flex gap-2 justify-end pt-2">
         <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
-        <button type="submit" className="btn btn-primary">Create Project</button>
+        <button type="submit" className="btn btn-primary">{isEdit ? 'Update Project' : 'Create Project'}</button>
       </div>
     </form>
   );

@@ -1,16 +1,29 @@
 import { useState } from 'react';
 import { useTransactions } from '../../hooks/useTransactions';
+import { INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '../../utils/constants';
 
-const CATEGORIES = ['Salary', 'Freelance', 'Client Payment', 'Refund', 'Software', 'Office', 'Marketing', 'Travel', 'Food', 'Utilities', 'Other'];
-
-export default function TransactionForm({ onClose }) {
-  const { addTransaction } = useTransactions();
-  const [form, setForm] = useState({ date: '', category: '', type: 'expense', amount: '', note: '' });
+export default function TransactionForm({ onClose, defaultType, transaction: initialTransaction }) {
+  const { addTransaction, updateTransaction } = useTransactions();
+  const isEdit = !!initialTransaction;
+  const [form, setForm] = useState({
+    date: initialTransaction?.date || '',
+    category: initialTransaction?.category || '',
+    type: initialTransaction?.type || defaultType || 'expense',
+    amount: initialTransaction?.amount || '',
+    note: initialTransaction?.note || '',
+  });
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const categories = form.type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await addTransaction({ ...form, amount: parseFloat(form.amount) || 0 });
+    const payload = { ...form, amount: parseFloat(form.amount) || 0 };
+    if (isEdit) {
+      await updateTransaction(initialTransaction.id, payload);
+    } else {
+      await addTransaction(payload);
+    }
     onClose();
   };
 
@@ -25,7 +38,7 @@ export default function TransactionForm({ onClose }) {
         <label className="input-label">Category</label>
         <select name="category" value={form.category} onChange={handleChange} required className="input w-full">
           <option value="">Category</option>
-          {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+          {categories.map((c) => <option key={c}>{c}</option>)}
         </select>
       </div>
 
@@ -53,7 +66,7 @@ export default function TransactionForm({ onClose }) {
 
       <div className="flex gap-2 justify-end pt-2">
         <button type="button" onClick={onClose} className="btn btn-secondary">Cancel</button>
-        <button type="submit" className="btn btn-primary">Add Transaction</button>
+        <button type="submit" className="btn btn-primary">{isEdit ? 'Update Transaction' : 'Add Transaction'}</button>
       </div>
     </form>
   );

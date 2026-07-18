@@ -18,6 +18,7 @@ export default function ClientDetails({ clientId }) {
         <h3 className="text-lg font-semibold">{client.name}</h3>
         <p className="text-sm text-gray-500">{client.email} {client.phone && `| ${client.phone}`}</p>
         {client.company && <p className="text-sm text-gray-500">{client.company}</p>}
+        {client.address && <p className="text-sm text-gray-500">{client.address}</p>}
       </div>
 
       <div className="grid grid-cols-3 gap-4">

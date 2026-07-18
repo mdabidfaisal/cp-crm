@@ -1,10 +1,18 @@
 import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import Modal from '../components/Common/Modal';
 import ClientsList from '../components/Clients/ClientsList';
 import ClientForm from '../components/Clients/ClientForm';
+import ClientDetail from '../components/Clients/ClientDetail';
 
 export default function ClientsPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
+
+  if (id) {
+    return <ClientDetail clientId={id} onBack={() => navigate('/clients')} />;
+  }
 
   return (
     <div>

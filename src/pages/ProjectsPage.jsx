@@ -1,10 +1,18 @@
 import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import Modal from '../components/Common/Modal';
 import ProjectsList from '../components/Projects/ProjectsList';
 import ProjectForm from '../components/Projects/ProjectForm';
+import ProjectDetail from '../components/Projects/ProjectDetail';
 
 export default function ProjectsPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
+
+  if (id) {
+    return <ProjectDetail projectId={id} onBack={() => navigate('/projects')} />;
+  }
 
   return (
     <div>

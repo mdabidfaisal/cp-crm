@@ -14,7 +14,7 @@ export default function RecentProjects({ projects = [] }) {
           {projects.slice(0, 5).map((p) => (
             <li key={p.id}>
               <Link to={`/projects/${p.id}`} className="flex justify-between text-sm hover:bg-gray-50 p-2 rounded">
-                <span>{p.title || p.name}</span>
+                <span>{p.name}</span>
                 <span className="text-gray-500">{p.status}</span>
               </Link>
             </li>
